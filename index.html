@@ -712,25 +712,28 @@ function showApp() {
   document.getElementById('appMain').style.display = 'block';
 }
 
-// INITIAL_SESSION：頁面載入時 SDK 初始化完成後觸發（含刷新）
-// SIGNED_IN：使用者登入後觸發
-// SIGNED_OUT：登出後觸發
+// 處理登入狀態變化（登入、登出、token 刷新）
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'INITIAL_SESSION') {
-    if (session) {
-      currentUser = session.user;
-      showApp();
-      await initApp();
-    } else {
-      showLogin();
-    }
-  } else if (event === 'SIGNED_IN') {
+  if (event === 'SIGNED_IN') {
     currentUser = session.user;
     showApp();
     await initApp();
+  } else if (event === 'TOKEN_REFRESHED') {
+    if (session) currentUser = session.user;
   } else if (event === 'SIGNED_OUT') {
     currentUser = null;
     data = { students: [], records: [], monthStatus: {} };
+    showLogin();
+  }
+});
+
+// 頁面載入時檢查是否已有登入狀態（含刷新頁面）
+sb.auth.getSession().then(async ({ data: { session } }) => {
+  if (session) {
+    currentUser = session.user;
+    showApp();
+    await initApp();
+  } else {
     showLogin();
   }
 });
