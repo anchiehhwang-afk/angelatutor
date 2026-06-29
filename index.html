@@ -683,7 +683,9 @@ input:focus, select:focus, textarea:focus {
 // ── Supabase（填入你的資料）──
 const SUPABASE_URL = 'https://bancmxwfjiyijnxcxcqb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_-9xhDA7gGRV4BrXXkk2cZQ_1nXNvOor';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+});
 
 // ── State ──
 let currentUser    = null;
@@ -694,6 +696,8 @@ let currentYear    = new Date().getFullYear();
 let currentMonth   = new Date().getMonth() + 1;
 let sheetStudentId = null;
 let loginMode      = 'login';
+let _started       = false;
+const _SESS_KEY    = 'tutor_sess_v1';
 
 // ── Auth ──
 function showLogin() {
@@ -712,30 +716,62 @@ function showApp() {
   document.getElementById('appMain').style.display = 'block';
 }
 
-// 處理登入狀態變化（登入、登出、token 刷新）
+// ── Session 備份／還原（防止 getSession 失效）──
+function _saveSession(s) {
+  if (s?.access_token) localStorage.setItem(_SESS_KEY, JSON.stringify({ a: s.access_token, r: s.refresh_token }));
+}
+async function _restoreSession() {
+  try {
+    const raw = localStorage.getItem(_SESS_KEY);
+    if (!raw) return null;
+    const { a, r } = JSON.parse(raw);
+    if (!a || !r) return null;
+    const { data: { session } } = await sb.auth.setSession({ access_token: a, refresh_token: r });
+    return session || null;
+  } catch { return null; }
+}
+async function _launch(user) {
+  if (_started) return;
+  _started = true;
+  currentUser = user;
+  showApp();
+  await initApp();
+}
+
+// 監聽狀態變化
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN') {
-    currentUser = session.user;
-    showApp();
-    await initApp();
+  if (event === 'INITIAL_SESSION') {
+    if (session) { _saveSession(session); await _launch(session.user); }
+    else if (!_started) {
+      const restored = await _restoreSession();
+      if (restored) { await _launch(restored.user); }
+      else { _started = true; showLogin(); }
+    }
+  } else if (event === 'SIGNED_IN') {
+    _saveSession(session); _started = false; await _launch(session.user);
   } else if (event === 'TOKEN_REFRESHED') {
-    if (session) currentUser = session.user;
+    if (session) { _saveSession(session); currentUser = session.user; }
   } else if (event === 'SIGNED_OUT') {
-    currentUser = null;
-    data = { students: [], records: [], monthStatus: {} };
+    _started = false; localStorage.removeItem(_SESS_KEY);
+    currentUser = null; data = { students: [], records: [], monthStatus: {} };
     showLogin();
   }
 });
 
-// 頁面載入時檢查是否已有登入狀態（含刷新頁面）
+// 兜底：getSession → 備份還原 → 登入畫面
 sb.auth.getSession().then(async ({ data: { session } }) => {
-  if (session) {
-    currentUser = session.user;
-    showApp();
-    await initApp();
-  } else {
-    showLogin();
+  if (_started) return;
+  if (session) { _saveSession(session); await _launch(session.user); }
+  else {
+    const restored = await _restoreSession();
+    if (restored) { await _launch(restored.user); }
+    else if (!_started) { _started = true; showLogin(); }
   }
+}).catch(async () => {
+  if (_started) return;
+  const restored = await _restoreSession();
+  if (restored) { await _launch(restored.user); }
+  else { _started = true; showLogin(); }
 });
 
 function switchLoginTab(mode) {
@@ -780,10 +816,8 @@ async function handleAuth() {
 }
 
 async function logout() {
+  localStorage.removeItem(_SESS_KEY);
   await sb.auth.signOut();
-  currentUser = null;
-  data = { students: [], records: [], monthStatus: {} };
-  showLogin();
 }
 
 // ── Init ──
