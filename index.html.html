@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的家教手帳</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #f7f3ec;
+  --paper: #fffdf8;
+  --lavender: #9b8fad;
+  --lavender-light: #ede8f5;
+  --lavender-pale: #f5f1fa;
+  --rose: #c4877a;
+  --rose-light: #f5e8e5;
+  --yellow: #c9a84c;
+  --yellow-light: #fdf7e4;
+  --sage: #7a9e7e;
+  --sage-light: #e8f0e8;
+  --text: #3d3440;
+  --text-muted: #9b8fa0;
+  --border: #ddd0cc;
+  --hw: 'Zen Maru Gothic', 'PingFang TC', system-ui;
+  --body: 'Zen Maru Gothic', 'PingFang TC', system-ui, sans-serif;
+  --shadow: 0 4px 20px rgba(155,143,173,0.16);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--body);
+  background-color: var(--bg);
+  background-image: repeating-linear-gradient(
+    transparent, transparent 27px,
+    rgba(155,143,173,0.09) 27px, rgba(155,143,173,0.09) 28px
+  );
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+/* ── Login Screen ── */
+#loginScreen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  background-image: repeating-linear-gradient(
+    transparent, transparent 27px,
+    rgba(155,143,173,0.09) 27px, rgba(155,143,173,0.09) 28px
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 24px;
+}
+.login-card {
+  background: var(--paper);
+  border-radius: 20px;
+  padding: 36px 28px 28px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 8px 36px rgba(155,143,173,0.22);
+  border: 1px solid rgba(155,143,173,0.12);
+  position: relative;
+}
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: -10px; left: 50%;
+  transform: translateX(-50%) rotate(-0.5deg);
+  width: 54px; height: 17px;
+  background: rgba(155,143,173,0.36);
+  border-radius: 2px;
+}
+.login-logo {
+  font-family: var(--hw);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--lavender);
+  text-align: center;
+  margin-bottom: 4px;
+}
+.login-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 24px;
+  font-family: var(--hw);
+}
+.login-tabs {
+  display: flex;
+  border-bottom: 1.5px solid var(--border);
+  margin-bottom: 20px;
+}
+.login-tab {
+  flex: 1;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -1.5px;
+  font-family: var(--hw);
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.login-tab.active { color: var(--lavender); border-bottom-color: var(--lavender); font-weight: 600; }
+.login-card input { margin-bottom: 12px; }
+#authMsg {
+  font-size: 13px;
+  text-align: center;
+  margin-top: 10px;
+  font-family: var(--hw);
+  min-height: 18px;
+}
+.btn-logout {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(155,143,173,0.12);
+  border: none;
+  border-radius: 16px;
+  padding: 6px 14px;
+  font-family: var(--hw);
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-logout:hover { background: rgba(155,143,173,0.25); color: var(--lavender); }
+
+/* ── Header ── */
+.header {
+  background: linear-gradient(150deg, #ede6f7 0%, #f5e8f0 60%, #f7ebe6 100%);
+  padding: 16px 20px 14px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1.5px solid rgba(155,143,173,0.18);
+  box-shadow: 0 2px 14px rgba(155,143,173,0.14);
+}
+.header h1 {
+  font-family: var(--hw);
+  font-size: 27px;
+  font-weight: 700;
+  color: var(--lavender);
+  line-height: 1;
+  letter-spacing: 0.5px;
+}
+.header p {
+  font-family: var(--hw);
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ── Bottom Nav ── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--paper);
+  border-top: 1.5px solid rgba(155,143,173,0.14);
+  display: flex;
+  z-index: 100;
+  box-shadow: 0 -4px 20px rgba(155,143,173,0.1);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.nav-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 10px 4px 11px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: var(--text-muted);
+  font-family: var(--hw);
+  font-size: 12px;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+.nav-btn.active { color: var(--lavender); }
+.nav-btn svg { width: 21px; height: 21px; }
+.nav-pip {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--lavender);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.nav-btn.active .nav-pip { opacity: 1; }
+
+/* ── Pages ── */
+.page { display: none; padding: 16px; }
+.page.active { display: block; animation: pgIn 0.24s ease; }
+@keyframes pgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Section label ── */
+.section-label {
+  font-family: var(--hw);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--lavender);
+  margin: 18px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, rgba(155,143,173,0.3), transparent);
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--paper);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+  position: relative;
+  border: 1px solid rgba(155,143,173,0.09);
+}
+.card-title {
+  font-family: var(--hw);
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--lavender);
+  margin-bottom: 16px;
+}
+.card-taped::before {
+  content: '';
+  position: absolute;
+  top: -9px; left: 28px;
+  width: 54px; height: 17px;
+  background: rgba(155,143,173,0.38);
+  border-radius: 2px;
+  transform: rotate(-1.5deg);
+}
+.card-taped-rose::before {
+  content: '';
+  position: absolute;
+  top: -9px; left: 28px;
+  width: 54px; height: 17px;
+  background: rgba(196,135,122,0.32);
+  border-radius: 2px;
+  transform: rotate(1.2deg);
+}
+.journal-card { border-left: 3px solid rgba(196,135,122,0.38); }
+
+/* ── Form ── */
+label {
+  display: block;
+  font-family: var(--hw);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  margin-top: 14px;
+}
+label:first-of-type { margin-top: 0; }
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: var(--body);
+  color: var(--text);
+  background: rgba(255,253,248,0.85);
+  transition: border-color 0.2s, background 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--lavender);
+  background: #fff;
+}
+
+/* ── Chips ── */
+.chip-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.chip {
+  padding: 7px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  font-family: var(--hw);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #fff;
+  color: var(--text-muted);
+  transition: all 0.18s;
+}
+.chip:hover { border-color: var(--lavender); color: var(--lavender); }
+.chip.selected { background: var(--lavender); border-color: var(--lavender); color: #fff; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 20px;
+  border-radius: 24px;
+  font-family: var(--hw);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.18s;
+  width: 100%;
+  letter-spacing: 0.3px;
+}
+.btn:active { transform: scale(0.96); }
+.btn-primary { background: var(--lavender); color: #fff; box-shadow: 0 4px 14px rgba(155,143,173,0.35); }
+.btn-primary:hover { background: #8578a0; }
+.btn-accent  { background: var(--rose); color: #fff; box-shadow: 0 4px 14px rgba(196,135,122,0.35); }
+.btn-outline { background: #fff; color: var(--lavender); border: 1.5px solid var(--lavender); }
+.btn-ghost   { background: none; color: var(--text-muted); border: 1.5px solid var(--border); }
+.btn-danger  { background: #fee2e2; color: #dc2626; border: none; }
+.btn-sm      { padding: 7px 14px; font-size: 14px; width: auto; border-radius: 16px; }
+
+/* ── Record items ── */
+.record-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px dashed rgba(155,143,173,0.22);
+  gap: 10px;
+}
+.record-item:last-child { border-bottom: none; }
+.record-info { flex: 1; min-width: 0; }
+.record-student { font-family: var(--hw); font-weight: 700; font-size: 17px; color: var(--text); }
+.record-date { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+.record-hours {
+  font-family: 'Zen Maru Gothic', monospace;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--rose);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.delete-btn {
+  background: none; border: none;
+  color: rgba(155,143,173,0.35);
+  cursor: pointer; padding: 4px;
+  transition: color 0.2s; line-height: 0; flex-shrink: 0;
+}
+.delete-btn:hover { color: #dc2626; }
+
+/* ── Month selector ── */
+.month-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--paper);
+  border-radius: 14px;
+  padding: 12px 16px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  border: 1px solid rgba(155,143,173,0.09);
+}
+.month-nav {
+  background: var(--lavender-light);
+  border: none;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--lavender);
+  font-size: 20px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.month-nav:hover { background: var(--lavender); color: #fff; }
+.month-label { font-family: var(--hw); font-size: 22px; font-weight: 700; color: var(--text); }
+
+/* ── Month total ── */
+.total-banner {
+  background: var(--yellow-light);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  border: 1.5px solid rgba(201,168,76,0.3);
+  box-shadow: 2px 3px 10px rgba(201,168,76,0.14);
+  position: relative;
+}
+.total-banner::before {
+  content: '';
+  position: absolute;
+  top: -8px; left: 50%;
+  transform: translateX(-50%) rotate(-0.5deg);
+  width: 38px; height: 14px;
+  background: rgba(201,168,76,0.48);
+  border-radius: 2px;
+}
+.total-banner-label { font-family: var(--hw); font-size: 14px; color: #8a6e28; font-weight: 600; }
+.total-banner-amount { font-family: 'Zen Maru Gothic', sans-serif; font-size: 34px; font-weight: 700; color: #6a4e10; line-height: 1.15; }
+
+/* ── Polaroid grid ── */
+.polaroid-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 4px 2px; }
+.polaroid {
+  background: #fffdf6;
+  padding: 4px 4px 10px;
+  border-radius: 2px;
+  box-shadow: 3px 5px 14px rgba(100,80,120,0.16), 0 0 0 1px rgba(200,185,215,0.2);
+  cursor: pointer;
+  transition: transform 0.26s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.polaroid:nth-child(4n+1) { transform: rotate(-2.4deg); }
+.polaroid:nth-child(4n+2) { transform: rotate(1.9deg); }
+.polaroid:nth-child(4n+3) { transform: rotate(-1.3deg); }
+.polaroid:nth-child(4n+0) { transform: rotate(2.5deg); }
+.polaroid:active { transform: rotate(0deg) scale(0.94) !important; box-shadow: 1px 2px 6px rgba(100,80,120,0.12); }
+.polaroid-photo {
+  height: 52px;
+  border-radius: 1px;
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+  gap: 2px; position: relative; overflow: hidden;
+}
+.polaroid:nth-child(4n+1) .polaroid-photo { background: linear-gradient(135deg,#ede8f5,#e0d8f0); }
+.polaroid:nth-child(4n+2) .polaroid-photo { background: linear-gradient(135deg,#f5e8e5,#f0dad6); }
+.polaroid:nth-child(4n+3) .polaroid-photo { background: linear-gradient(135deg,#fdf7e4,#f5ecd0); }
+.polaroid:nth-child(4n+0) .polaroid-photo { background: linear-gradient(135deg,#e8f0e8,#d8eadb); }
+.polaroid-initial { font-family: 'Zen Maru Gothic', sans-serif; font-size: 22px; font-weight: 700; color: rgba(61,52,64,0.28); line-height: 1; }
+.polaroid-amt { font-family: 'Zen Maru Gothic', sans-serif; font-size: 10px; font-weight: 700; color: rgba(61,52,64,0.45); }
+.polaroid-dot {
+  position: absolute; top: 6px; right: 6px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(155,143,173,0.25); transition: background 0.2s;
+}
+.polaroid-dot.notified { background: var(--rose); }
+.polaroid-dot.paid     { background: var(--sage); }
+.polaroid-caption { padding: 5px 2px 0; text-align: center; }
+.polaroid-name { font-family: var(--hw); font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.polaroid-sub { font-family: 'Zen Maru Gothic', sans-serif; font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+
+/* ── Bottom sheet ── */
+.sheet-overlay {
+  position: fixed; inset: 0;
+  background: rgba(61,52,64,0.42);
+  z-index: 400; opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+}
+.sheet-overlay.show { opacity: 1; pointer-events: all; }
+.bottom-sheet {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--paper);
+  background-image: repeating-linear-gradient(transparent, transparent 27px, rgba(155,143,173,0.07) 27px, rgba(155,143,173,0.07) 28px);
+  border-radius: 24px 24px 0 0;
+  border-left: 3px solid rgba(196,135,122,0.32);
+  z-index: 401;
+  transform: translateY(100%);
+  transition: transform 0.38s cubic-bezier(0.32,0.72,0,1);
+  max-height: 88vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+.bottom-sheet.show { transform: translateY(0); }
+.sheet-handle { width: 34px; height: 4px; background: rgba(155,143,173,0.28); border-radius: 2px; margin: 12px auto 0; }
+.sheet-inner { padding: 14px 20px 28px; }
+.sheet-header { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed rgba(155,143,173,0.28); }
+.sheet-month-tag { font-family: 'Zen Maru Gothic', sans-serif; font-size: 14px; color: var(--text-muted); }
+.sheet-name { font-family: var(--hw); font-size: 30px; font-weight: 700; color: var(--text); line-height: 1.1; margin: 2px 0; }
+.sheet-total { font-family: 'Zen Maru Gothic', sans-serif; font-size: 36px; font-weight: 700; color: var(--rose); line-height: 1.1; }
+.sheet-detail { font-family: var(--hw); font-size: 15px; color: var(--text-muted); margin-bottom: 12px; }
+.sheet-dates {
+  background: var(--lavender-pale); border-radius: 10px; border-left: 3px solid var(--lavender);
+  padding: 10px 12px; font-family: var(--hw); font-size: 15px; color: var(--lavender); line-height: 1.8; margin-bottom: 14px;
+}
+.msg-label { font-family: var(--hw); font-size: 15px; color: var(--text-muted); margin-bottom: 6px; }
+.message-box {
+  background: rgba(255,253,240,0.9); border: 1.5px dashed rgba(155,143,173,0.28);
+  border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.9;
+  color: var(--text); white-space: pre-line; margin-bottom: 10px; font-family: var(--body);
+}
+
+/* ── Status toggles ── */
+.check-row { display: flex; gap: 8px; margin-top: 12px; }
+.check-item {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; cursor: pointer; flex: 1;
+  padding: 10px 8px; border-radius: 12px;
+  border: 1.5px solid var(--border);
+  font-family: var(--hw); font-size: 15px; font-weight: 600;
+  color: var(--text-muted); background: #fff; transition: all 0.2s;
+}
+.check-item.notified { background: var(--rose-light); border-color: var(--rose); color: var(--rose); }
+.check-item.paid     { background: var(--sage-light); border-color: var(--sage); color: var(--sage); }
+
+/* ── Student list ── */
+.student-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px dashed rgba(155,143,173,0.2);
+}
+.student-item:last-child { border-bottom: none; }
+.student-name-d { font-family: var(--hw); font-weight: 700; font-size: 18px; color: var(--text); }
+.student-rate-d { font-family: 'Zen Maru Gothic', sans-serif; font-size: 14px; color: var(--text-muted); margin-top: 1px; }
+
+/* ── Empty ── */
+.empty { text-align: center; padding: 32px 16px; color: var(--text-muted); font-family: var(--hw); font-size: 16px; }
+.empty-icon { font-size: 30px; margin-bottom: 8px; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 90px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--lavender); color: #fff;
+  padding: 10px 22px; border-radius: 24px;
+  font-family: var(--hw); font-size: 16px; font-weight: 600;
+  opacity: 0; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  z-index: 500; white-space: nowrap;
+  box-shadow: 0 4px 18px rgba(155,143,173,0.4); pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+</style>
+</head>
+<body>
+
+<!-- ── Loading Screen ── -->
+<div id="loadingScreen" style="position:fixed;inset:0;background:var(--bg);background-image:repeating-linear-gradient(transparent,transparent 27px,rgba(155,143,173,0.09) 27px,rgba(155,143,173,0.09) 28px);display:flex;align-items:center;justify-content:center;z-index:10000;">
+  <div style="font-family:var(--hw);color:var(--lavender);font-size:20px;font-weight:700;letter-spacing:1px;">✦ 載入中…</div>
+</div>
+
+<!-- ── Login Screen ── -->
+<div id="loginScreen" style="display:none">
+  <div class="login-card">
+    <div class="login-logo">✦ 我的家教手帳</div>
+    <div class="login-sub">私人記事本，請先登入</div>
+    <div class="login-tabs">
+      <button class="login-tab active" id="tabLogin" onclick="switchLoginTab('login')">登入</button>
+      <button class="login-tab" id="tabSignup" onclick="switchLoginTab('signup')">第一次使用</button>
+    </div>
+    <input type="email" id="authEmail" placeholder="電子信箱">
+    <input type="password" id="authPassword" placeholder="密碼（至少 6 位）">
+    <button class="btn btn-primary" id="authBtn" onclick="handleAuth()">登入</button>
+    <div id="authMsg"></div>
+  </div>
+</div>
+
+<!-- ── Main App ── -->
+<div id="appMain" style="display:none">
+
+<div class="header">
+  <h1>✦ 我的家教手帳</h1>
+  <p id="headerDate"></p>
+  <button class="btn-logout" onclick="logout()">登出</button>
+</div>
+
+<!-- ── Page: Log ── -->
+<div id="page-log" class="page active">
+  <div class="card journal-card card-taped">
+    <div class="card-title">✏️ 登記上課</div>
+    <label>學生</label>
+    <select id="logStudent"><option value="">請選擇學生...</option></select>
+    <label>上課日期</label>
+    <input type="date" id="logDate">
+    <label>上課時長</label>
+    <div class="chip-group" id="hoursChips">
+      <div class="chip" data-val="1"      onclick="selectChip(this,'hours')">1 小時</div>
+      <div class="chip" data-val="1.5"    onclick="selectChip(this,'hours')">1.5 小時</div>
+      <div class="chip" data-val="2"      onclick="selectChip(this,'hours')">2 小時</div>
+      <div class="chip" data-val="custom" onclick="selectChip(this,'hours')">自訂</div>
+    </div>
+    <input type="number" id="logHoursCustom" placeholder="輸入小時數（例：1.5）" step="0.5" min="0.5" style="display:none;margin-top:6px;">
+    <div style="margin-top:18px;">
+      <button class="btn btn-primary" onclick="addRecord()">✦ 登記這堂課</button>
+    </div>
+  </div>
+  <div class="section-label">最近記錄</div>
+  <div class="card">
+    <div id="recentRecords">
+      <div class="empty"><div class="empty-icon">🌸</div>還沒有記錄，快去登記第一堂課！</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Page: Month ── -->
+<div id="page-month" class="page">
+  <div class="month-selector">
+    <button class="month-nav" onclick="changeMonth(-1)">‹</button>
+    <span class="month-label" id="monthLabel"></span>
+    <button class="month-nav" onclick="changeMonth(1)">›</button>
+  </div>
+  <div id="monthTotalBanner" style="display:none;"></div>
+  <div id="monthSummary"></div>
+</div>
+
+<!-- ── Page: Students ── -->
+<div id="page-students" class="page">
+  <div class="card journal-card card-taped-rose">
+    <div class="card-title">➕ 新增學生</div>
+    <label>學生姓名</label>
+    <input type="text" id="newStudentName" placeholder="例：小明">
+    <label>每小時收費（NT$）</label>
+    <div class="chip-group" id="rateChips">
+      <div class="chip" data-val="600"    onclick="selectChip(this,'rate')">600</div>
+      <div class="chip" data-val="650"    onclick="selectChip(this,'rate')">650</div>
+      <div class="chip" data-val="700"    onclick="selectChip(this,'rate')">700</div>
+      <div class="chip" data-val="custom" onclick="selectChip(this,'rate')">自訂</div>
+    </div>
+    <input type="number" id="newStudentRateCustom" placeholder="輸入時薪" style="display:none;margin-top:6px;">
+    <div style="margin-top:18px;">
+      <button class="btn btn-primary" onclick="addStudent()">✦ 新增學生</button>
+    </div>
+  </div>
+  <div class="section-label">學生列表</div>
+  <div class="card">
+    <div id="studentList">
+      <div class="empty"><div class="empty-icon">👤</div>尚無學生，先新增學生吧！</div>
+    </div>
+  </div>
+  <div class="section-label">備份</div>
+  <div class="card">
+    <div class="card-title" style="font-size:17px;margin-bottom:10px;">💾 資料備份</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">下載目前所有資料的備份檔案。</p>
+    <button class="btn btn-outline" onclick="exportData()">📤 下載備份</button>
+  </div>
+</div>
+
+<!-- ── Bottom Nav ── -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-log" onclick="showPage('log')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+    登記上課
+    <div class="nav-pip"></div>
+  </button>
+  <button class="nav-btn" id="nav-month" onclick="showPage('month')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    月結算
+    <div class="nav-pip"></div>
+  </button>
+  <button class="nav-btn" id="nav-students" onclick="showPage('students')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    學生管理
+    <div class="nav-pip"></div>
+  </button>
+</nav>
+
+<!-- ── Bottom Sheet ── -->
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeStudentSheet()"></div>
+<div class="bottom-sheet" id="bottomSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-inner" id="sheetContent"></div>
+</div>
+
+</div><!-- end #appMain -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Supabase（填入你的資料）──
+const SUPABASE_URL = 'https://bancmxwfjiyijnxcxcqb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_-9xhDA7gGRV4BrXXkk2cZQ_1nXNvOor';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── State ──
+let currentUser    = null;
+let data           = { students: [], records: [], monthStatus: {} };
+let selectedHours  = null;
+let selectedRate   = null;
+let currentYear    = new Date().getFullYear();
+let currentMonth   = new Date().getMonth() + 1;
+let sheetStudentId = null;
+let loginMode      = 'login';
+
+// ── Auth ──
+function showLogin() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appMain').style.display = 'none';
+  const btn = document.getElementById('authBtn');
+  btn.textContent = loginMode === 'login' ? '登入' : '建立帳號';
+  btn.disabled = false;
+  document.getElementById('authMsg').textContent = '';
+}
+
+function showApp() {
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appMain').style.display = 'block';
+}
+
+// INITIAL_SESSION：頁面載入時 SDK 初始化完成後觸發（含刷新）
+// SIGNED_IN：使用者登入後觸發
+// SIGNED_OUT：登出後觸發
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'INITIAL_SESSION') {
+    if (session) {
+      currentUser = session.user;
+      showApp();
+      await initApp();
+    } else {
+      showLogin();
+    }
+  } else if (event === 'SIGNED_IN') {
+    currentUser = session.user;
+    showApp();
+    await initApp();
+  } else if (event === 'SIGNED_OUT') {
+    currentUser = null;
+    data = { students: [], records: [], monthStatus: {} };
+    showLogin();
+  }
+});
+
+function switchLoginTab(mode) {
+  loginMode = mode;
+  document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
+  document.getElementById('tabSignup').classList.toggle('active', mode === 'signup');
+  document.getElementById('authBtn').textContent = mode === 'login' ? '登入' : '建立帳號';
+}
+
+async function handleAuth() {
+  const email    = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const msg      = document.getElementById('authMsg');
+  msg.textContent = '';
+  if (!email || !password) { msg.style.color = 'var(--rose)'; msg.textContent = '請輸入信箱和密碼'; return; }
+
+  const btn = document.getElementById('authBtn');
+  btn.textContent = '請稍候…';
+  btn.disabled = true;
+
+  let error;
+  if (loginMode === 'login') {
+    ({ error } = await sb.auth.signInWithPassword({ email, password }));
+  } else {
+    ({ error } = await sb.auth.signUp({ email, password }));
+    if (!error) {
+      msg.style.color = 'var(--sage)';
+      msg.textContent = '帳號建立成功！請用此帳號登入。';
+      switchLoginTab('login');
+      btn.textContent = '登入';
+      btn.disabled = false;
+      return;
+    }
+  }
+
+  if (error) {
+    msg.style.color = 'var(--rose)';
+    msg.textContent = error.message === 'Invalid login credentials' ? '信箱或密碼錯誤' : error.message;
+    btn.textContent = loginMode === 'login' ? '登入' : '建立帳號';
+    btn.disabled = false;
+  }
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  currentUser = null;
+  data = { students: [], records: [], monthStatus: {} };
+  showLogin();
+}
+
+// ── Init ──
+async function initApp() {
+  await loadFromSupabase();
+  const _t = new Date();
+  document.getElementById('logDate').value =
+    `${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`;
+  document.getElementById('headerDate').textContent = formatDate(new Date());
+  renderStudentSelect();
+  renderRecentRecords();
+  renderStudentList();
+  updateMonthLabel();
+}
+
+// ── Load from Supabase ──
+async function loadFromSupabase() {
+  const [{ data: students }, { data: records }, { data: monthStatus }] = await Promise.all([
+    sb.from('students').select('*').order('created_at'),
+    sb.from('records').select('*').order('date', { ascending: false }),
+    sb.from('month_status').select('*'),
+  ]);
+
+  data.students = (students || []).map(s => ({ id: s.id, name: s.name, rate: s.rate }));
+  data.records  = (records  || []).map(r => ({
+    id: r.id, studentId: r.student_id,
+    date: r.date, hours: parseFloat(r.hours), rate: r.rate
+  }));
+  data.monthStatus = {};
+  (monthStatus || []).forEach(ms => {
+    const key = `${ms.year}-${String(ms.month).padStart(2,'0')}-${ms.student_id}`;
+    data.monthStatus[key] = { notified: ms.notified, paid: ms.paid, dbId: ms.id };
+  });
+}
+
+// ── Navigation ──
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('nav-'  + name).classList.add('active');
+  if (name === 'month')    renderMonthSummary();
+  if (name === 'students') renderStudentList();
+}
+
+// ── Chips ──
+function selectChip(el, type) {
+  const groupId = type === 'hours' ? 'hoursChips' : 'rateChips';
+  document.querySelectorAll('#' + groupId + ' .chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const val = el.dataset.val;
+  if (type === 'hours') {
+    selectedHours = val === 'custom' ? null : parseFloat(val);
+    document.getElementById('logHoursCustom').style.display = val === 'custom' ? 'block' : 'none';
+  } else {
+    selectedRate = val === 'custom' ? null : parseInt(val);
+    document.getElementById('newStudentRateCustom').style.display = val === 'custom' ? 'block' : 'none';
+  }
+}
+
+// ── Students ──
+async function addStudent() {
+  const name = document.getElementById('newStudentName').value.trim();
+  if (!name) return showToast('請輸入學生姓名');
+  const customRate = document.getElementById('newStudentRateCustom').value;
+  const rate = selectedRate || (customRate ? parseInt(customRate) : null);
+  if (!rate || rate <= 0) return showToast('請選擇或輸入時薪');
+
+  const { data: row, error } = await sb
+    .from('students')
+    .insert({ name, rate, user_id: currentUser.id })
+    .select().single();
+  if (error) return showToast('儲存失敗，請稍後再試');
+
+  data.students.push({ id: row.id, name: row.name, rate: row.rate });
+  document.getElementById('newStudentName').value = '';
+  document.getElementById('newStudentRateCustom').value = '';
+  document.getElementById('newStudentRateCustom').style.display = 'none';
+  document.querySelectorAll('#rateChips .chip').forEach(c => c.classList.remove('selected'));
+  selectedRate = null;
+  renderStudentList();
+  renderStudentSelect();
+  showToast('已新增學生：' + name + ' ✦');
+}
+
+async function deleteStudent(id) {
+  const s = data.students.find(s => s.id === id);
+  if (!s) return;
+  if (!confirm(`確定要刪除「${s.name}」嗎？\n（相關上課記錄也會一併刪除）`)) return;
+
+  const { error } = await sb.from('students').delete().eq('id', id);
+  if (error) return showToast('刪除失敗，請稍後再試');
+
+  data.students = data.students.filter(s => s.id !== id);
+  data.records  = data.records.filter(r => r.studentId !== id);
+  renderStudentList();
+  renderStudentSelect();
+  renderRecentRecords();
+  showToast('已刪除學生');
+}
+
+function renderStudentList() {
+  const el = document.getElementById('studentList');
+  if (!data.students.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">👤</div>尚無學生，先新增學生吧！</div>';
+    return;
+  }
+  el.innerHTML = data.students.map(s => `
+    <div class="student-item">
+      <div>
+        <div class="student-name-d">${s.name}</div>
+        <div class="student-rate-d">時薪 NT$${s.rate} / 小時</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">刪除</button>
+    </div>
+  `).join('');
+}
+
+function renderStudentSelect() {
+  const sel = document.getElementById('logStudent');
+  const val = sel.value;
+  sel.innerHTML = '<option value="">請選擇學生...</option>' +
+    data.students.map(s => `<option value="${s.id}">${s.name}（NT$${s.rate}/hr）</option>`).join('');
+  sel.value = val;
+}
+
+// ── Records ──
+async function addRecord() {
+  const studentId = document.getElementById('logStudent').value;
+  if (!studentId) return showToast('請選擇學生');
+  const date = document.getElementById('logDate').value;
+  if (!date) return showToast('請選擇日期');
+  const customHours = document.getElementById('logHoursCustom').value;
+  const hours = selectedHours || (customHours ? parseFloat(customHours) : null);
+  if (!hours || hours <= 0) return showToast('請選擇或輸入上課時長');
+
+  const s    = data.students.find(s => s.id === studentId);
+  const rate = s.rate;
+
+  const { data: row, error } = await sb
+    .from('records')
+    .insert({ student_id: studentId, date, hours, rate, user_id: currentUser.id })
+    .select().single();
+  if (error) return showToast('儲存失敗，請稍後再試');
+
+  data.records.unshift({ id: row.id, studentId, date, hours, rate });
+  data.records.sort((a, b) => b.date.localeCompare(a.date));
+  selectedHours = null;
+  document.querySelectorAll('#hoursChips .chip').forEach(c => c.classList.remove('selected'));
+  document.getElementById('logHoursCustom').value = '';
+  document.getElementById('logHoursCustom').style.display = 'none';
+  renderRecentRecords();
+  showToast(`已登記 ${s.name} ${hours} 小時 ✦`);
+}
+
+async function deleteRecord(id) {
+  if (!confirm('確定要刪除這筆記錄嗎？')) return;
+
+  const { error } = await sb.from('records').delete().eq('id', id);
+  if (error) return showToast('刪除失敗，請稍後再試');
+
+  data.records = data.records.filter(r => r.id !== id);
+  renderRecentRecords();
+  showToast('已刪除記錄');
+}
+
+function renderRecentRecords() {
+  const el = document.getElementById('recentRecords');
+  if (!data.records.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🌸</div>還沒有記錄，快去登記第一堂課！</div>';
+    return;
+  }
+  el.innerHTML = data.records.slice(0, 20).map(r => {
+    const s = data.students.find(s => s.id === r.studentId);
+    const name = s ? s.name : '（已刪除）';
+    const d = new Date(r.date + 'T00:00:00');
+    const dateStr = `${d.getMonth()+1}/${d.getDate()}（週${['日','一','二','三','四','五','六'][d.getDay()]}）`;
+    return `
+      <div class="record-item">
+        <div class="record-info">
+          <div class="record-student">${name}</div>
+          <div class="record-date">${dateStr}</div>
+        </div>
+        <span class="record-hours">${r.hours} 小時</span>
+        <button class="delete-btn" onclick="deleteRecord('${r.id}')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6"/><path d="M14 11v6"/>
+          </svg>
+        </button>
+      </div>`;
+  }).join('');
+}
+
+// ── Month summary ──
+function changeMonth(dir) {
+  closeStudentSheet();
+  currentMonth += dir;
+  if (currentMonth > 12) { currentMonth = 1;  currentYear++; }
+  if (currentMonth < 1)  { currentMonth = 12; currentYear--; }
+  updateMonthLabel();
+  renderMonthSummary();
+}
+
+function updateMonthLabel() {
+  document.getElementById('monthLabel').textContent = `${currentYear} 年 ${currentMonth} 月`;
+}
+
+function getStatusKey(studentId) {
+  return `${currentYear}-${String(currentMonth).padStart(2,'0')}-${studentId}`;
+}
+
+async function toggleStatus(studentId, type, event) {
+  event.stopPropagation();
+  const key = getStatusKey(studentId);
+  if (!data.monthStatus[key]) data.monthStatus[key] = { notified: false, paid: false, dbId: null };
+  const newVal = !data.monthStatus[key][type];
+  data.monthStatus[key][type] = newVal;
+
+  const ms = data.monthStatus[key];
+  if (ms.dbId) {
+    await sb.from('month_status').update({ [type]: newVal }).eq('id', ms.dbId);
+  } else {
+    const { data: row } = await sb.from('month_status')
+      .insert({
+        student_id: studentId, year: currentYear, month: currentMonth,
+        notified: ms.notified, paid: ms.paid, user_id: currentUser.id
+      }).select().single();
+    if (row) data.monthStatus[key].dbId = row.id;
+  }
+
+  renderMonthSummary();
+  if (sheetStudentId === studentId) {
+    document.getElementById('sheetToggles').innerHTML = buildToggles(data.monthStatus[key], studentId);
+  }
+}
+
+function buildToggles(status, studentId) {
+  return `
+    <div class="check-item ${status.notified ? 'notified' : ''}" onclick="toggleStatus('${studentId}','notified',event)">
+      <span>${status.notified ? '✓' : '○'}</span> 已傳送通知
+    </div>
+    <div class="check-item ${status.paid ? 'paid' : ''}" onclick="toggleStatus('${studentId}','paid',event)">
+      <span>${status.paid ? '✓' : '○'}</span> 已收到款項
+    </div>`;
+}
+
+function openStudentSheet(studentId) {
+  const monthStr = String(currentMonth).padStart(2,'0');
+  const prefix   = `${currentYear}-${monthStr}`;
+  const s = data.students.find(st => st.id === studentId);
+  if (!s) return;
+
+  const records      = data.records.filter(r => r.studentId === s.id && r.date.startsWith(prefix));
+  const key          = getStatusKey(studentId);
+  const status       = data.monthStatus[key] || { notified: false, paid: false };
+  const totalHours   = records.reduce((sum, r) => sum + r.hours, 0);
+  const totalLessons = records.length;
+  const totalAmount  = records.reduce((sum, r) => sum + r.hours * r.rate, 0);
+  const hoursDisplay = Number.isInteger(totalHours) ? totalHours : totalHours.toFixed(1);
+
+  const dateList = [...records]
+    .sort((a,b) => a.date.localeCompare(b.date))
+    .map(r => { const d = new Date(r.date+'T00:00:00'); return `${d.getMonth()+1}/${d.getDate()}`; })
+    .join('、');
+
+  const rates   = [...new Set(records.map(r => r.rate))];
+  const rateStr = rates.length === 1 ? `時薪${rates[0]}元 × ${hoursDisplay}小時 = ` : '';
+  const message = `${currentMonth}月份學費：\n上課日期：${dateList}，共${totalLessons}堂 ${hoursDisplay}小時\n本月學費：${rateStr}NT$${totalAmount.toLocaleString()}\n謝謝！`;
+  const msgEsc  = message.replace(/\\/g,'\\\\').replace(/`/g,'\\`');
+
+  document.getElementById('sheetContent').innerHTML = `
+    <div class="sheet-header">
+      <div class="sheet-month-tag">${currentYear} 年 ${currentMonth} 月</div>
+      <div class="sheet-name">${s.name}</div>
+      <div class="sheet-total">NT$${totalAmount.toLocaleString()}</div>
+    </div>
+    <div class="sheet-detail">共 ${totalLessons} 堂課 · ${hoursDisplay} 小時 · 時薪 NT$${rates[0] || s.rate}</div>
+    <div class="sheet-dates">${dateList}</div>
+    <div class="msg-label">✦ 通知訊息</div>
+    <div class="message-box">${message}</div>
+    <button class="btn btn-accent" onclick="copyMessage(\`${msgEsc}\`)" style="margin-bottom:14px;">
+      📋 複製訊息傳給家長
+    </button>
+    <div class="check-row" id="sheetToggles">${buildToggles(status, studentId)}</div>
+  `;
+
+  sheetStudentId = studentId;
+  document.getElementById('sheetOverlay').classList.add('show');
+  document.getElementById('bottomSheet').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeStudentSheet() {
+  document.getElementById('sheetOverlay').classList.remove('show');
+  document.getElementById('bottomSheet').classList.remove('show');
+  document.body.style.overflow = '';
+  sheetStudentId = null;
+}
+
+function renderMonthSummary() {
+  const el = document.getElementById('monthSummary');
+  const monthStr = String(currentMonth).padStart(2,'0');
+  const prefix   = `${currentYear}-${monthStr}`;
+
+  const withRecords = data.students.map(s => ({
+    ...s,
+    records: data.records.filter(r => r.studentId === s.id && r.date.startsWith(prefix))
+  })).filter(s => s.records.length > 0);
+
+  const banner = document.getElementById('monthTotalBanner');
+  if (!withRecords.length) {
+    banner.style.display = 'none';
+    el.innerHTML = '<div class="card"><div class="empty"><div class="empty-icon">🌸</div>這個月還沒有上課記錄</div></div>';
+    return;
+  }
+
+  const grandTotal = withRecords.reduce((sum, s) => {
+    return sum + s.records.reduce((rSum, r) => rSum + r.hours * r.rate, 0);
+  }, 0);
+
+  banner.style.display = 'block';
+  banner.innerHTML = `
+    <div class="total-banner">
+      <div class="total-banner-label">✦ 本月總收入</div>
+      <div class="total-banner-amount">NT$${grandTotal.toLocaleString()}</div>
+    </div>`;
+
+  el.innerHTML = '<div class="polaroid-grid">' + withRecords.map(s => {
+    const key         = getStatusKey(s.id);
+    const status      = data.monthStatus[key] || { notified: false, paid: false };
+    const totalHours  = s.records.reduce((sum, r) => sum + r.hours, 0);
+    const totalAmount = s.records.reduce((sum, r) => sum + r.hours * r.rate, 0);
+    const hoursDisp   = Number.isInteger(totalHours) ? totalHours : totalHours.toFixed(1);
+    const dotCls      = status.paid ? 'paid' : (status.notified ? 'notified' : '');
+    return `
+      <div class="polaroid" onclick="openStudentSheet('${s.id}')">
+        <div class="polaroid-photo">
+          <div class="polaroid-initial">${s.name[0]}</div>
+          <div class="polaroid-amt">NT$${totalAmount.toLocaleString()}</div>
+          <div class="polaroid-dot ${dotCls}"></div>
+        </div>
+        <div class="polaroid-caption">
+          <div class="polaroid-name">${s.name}</div>
+          <div class="polaroid-sub">${s.records.length} 堂 · ${hoursDisp} 小時</div>
+        </div>
+      </div>`;
+  }).join('') + '</div>';
+}
+
+function copyMessage(message) {
+  navigator.clipboard.writeText(message).then(() => showToast('已複製訊息 ✦'))
+    .catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = message;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('已複製訊息 ✦');
+    });
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const now  = new Date();
+  a.href     = url;
+  a.download = `家教記錄備份_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('備份已下載！');
+}
+
+function formatDate(d) {
+  const days = ['日','一','二','三','四','五','六'];
+  return `${d.getFullYear()} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日  週${days[d.getDay()]}`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
