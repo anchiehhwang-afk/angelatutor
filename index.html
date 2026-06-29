@@ -714,8 +714,9 @@ function showApp() {
   document.getElementById('appMain').style.display = 'block';
 }
 
-// 刷新頁面永遠回到登入頁
-sb.auth.signOut().finally(() => showLogin());
+// 刷新頁面永遠回到登入頁（立刻顯示，不等網路）
+showLogin();
+sb.auth.signOut({ scope: 'local' }).catch(() => {});
 
 // 監聽登入／登出
 sb.auth.onAuthStateChange(async (event, session) => {
