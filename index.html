@@ -684,7 +684,7 @@ input:focus, select:focus, textarea:focus {
 const SUPABASE_URL = 'https://bancmxwfjiyijnxcxcqb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_-9xhDA7gGRV4BrXXkk2cZQ_1nXNvOor';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+  auth: { persistSession: false, detectSessionInUrl: false }
 });
 
 // ── State ──
@@ -714,9 +714,8 @@ function showApp() {
   document.getElementById('appMain').style.display = 'block';
 }
 
-// 刷新頁面永遠回到登入頁（立刻顯示，不等網路）
+// session 不存到 localStorage，刷新自然回登入頁
 showLogin();
-sb.auth.signOut({ scope: 'local' }).catch(() => {});
 
 // 監聽登入／登出
 sb.auth.onAuthStateChange(async (event, session) => {
