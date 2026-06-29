@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>我的家教手帳</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -40,7 +40,7 @@ body {
   );
   color: var(--text);
   min-height: 100vh;
-  padding-bottom: 80px;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
 }
 
 /* ── Login Screen ── */
@@ -170,7 +170,7 @@ body {
   display: flex;
   z-index: 100;
   box-shadow: 0 -4px 20px rgba(155,143,173,0.1);
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
 }
 .nav-btn {
   flex: 1;
@@ -521,7 +521,7 @@ input:focus, select:focus, textarea:focus {
 
 /* ── Toast ── */
 .toast {
-  position: fixed; bottom: 90px; left: 50%;
+  position: fixed; bottom: calc(90px + env(safe-area-inset-bottom, 0px)); left: 50%;
   transform: translateX(-50%) translateY(20px);
   background: var(--lavender); color: #fff;
   padding: 10px 22px; border-radius: 24px;
@@ -696,8 +696,6 @@ let currentYear    = new Date().getFullYear();
 let currentMonth   = new Date().getMonth() + 1;
 let sheetStudentId = null;
 let loginMode      = 'login';
-let _started       = false;
-const _SESS_KEY    = 'tutor_sess_v1';
 
 // ── Auth ──
 function showLogin() {
@@ -716,62 +714,20 @@ function showApp() {
   document.getElementById('appMain').style.display = 'block';
 }
 
-// ── Session 備份／還原（防止 getSession 失效）──
-function _saveSession(s) {
-  if (s?.access_token) localStorage.setItem(_SESS_KEY, JSON.stringify({ a: s.access_token, r: s.refresh_token }));
-}
-async function _restoreSession() {
-  try {
-    const raw = localStorage.getItem(_SESS_KEY);
-    if (!raw) return null;
-    const { a, r } = JSON.parse(raw);
-    if (!a || !r) return null;
-    const { data: { session } } = await sb.auth.setSession({ access_token: a, refresh_token: r });
-    return session || null;
-  } catch { return null; }
-}
-async function _launch(user) {
-  if (_started) return;
-  _started = true;
-  currentUser = user;
-  showApp();
-  await initApp();
-}
+// 刷新頁面永遠回到登入頁
+sb.auth.signOut().finally(() => showLogin());
 
-// 監聽狀態變化
+// 監聽登入／登出
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'INITIAL_SESSION') {
-    if (session) { _saveSession(session); await _launch(session.user); }
-    else if (!_started) {
-      const restored = await _restoreSession();
-      if (restored) { await _launch(restored.user); }
-      else { _started = true; showLogin(); }
-    }
-  } else if (event === 'SIGNED_IN') {
-    _saveSession(session); _started = false; await _launch(session.user);
-  } else if (event === 'TOKEN_REFRESHED') {
-    if (session) { _saveSession(session); currentUser = session.user; }
+  if (event === 'SIGNED_IN') {
+    currentUser = session.user;
+    showApp();
+    await initApp();
   } else if (event === 'SIGNED_OUT') {
-    _started = false; localStorage.removeItem(_SESS_KEY);
-    currentUser = null; data = { students: [], records: [], monthStatus: {} };
+    currentUser = null;
+    data = { students: [], records: [], monthStatus: {} };
     showLogin();
   }
-});
-
-// 兜底：getSession → 備份還原 → 登入畫面
-sb.auth.getSession().then(async ({ data: { session } }) => {
-  if (_started) return;
-  if (session) { _saveSession(session); await _launch(session.user); }
-  else {
-    const restored = await _restoreSession();
-    if (restored) { await _launch(restored.user); }
-    else if (!_started) { _started = true; showLogin(); }
-  }
-}).catch(async () => {
-  if (_started) return;
-  const restored = await _restoreSession();
-  if (restored) { await _launch(restored.user); }
-  else { _started = true; showLogin(); }
 });
 
 function switchLoginTab(mode) {
@@ -816,7 +772,6 @@ async function handleAuth() {
 }
 
 async function logout() {
-  localStorage.removeItem(_SESS_KEY);
   await sb.auth.signOut();
 }
 
