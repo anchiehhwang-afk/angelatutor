@@ -564,17 +564,30 @@ input:focus, select:focus, textarea:focus {
   padding-bottom: 24px;
 }
 #page-prep .month-selector {
-  background: rgba(255,252,248,0.82);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255,235,245,0.22);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255,255,255,0.45);
   position: relative; z-index: 2;
 }
 .prep-cal-card {
-  background: rgba(255,252,248,0.86) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255,235,245,0.25) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255,255,255,0.45) !important;
+  box-shadow: 0 4px 24px rgba(180,140,180,0.18) !important;
   position: relative; z-index: 2;
 }
+#page-prep .prep-cal-day {
+  background: rgba(255,255,255,0.55);
+  border-color: rgba(255,255,255,0.6);
+}
+#page-prep .prep-cal-day:hover,
+#page-prep .prep-cal-day.today {
+  background: rgba(255,255,255,0.78);
+  border-color: rgba(155,143,173,0.6);
+}
+#page-prep .prep-cal-day.empty { background: transparent; border-color: transparent; }
 .prep-deco {
   position: absolute; pointer-events: none; user-select: none;
   z-index: 1; line-height: 1;
@@ -717,10 +730,10 @@ input:focus, select:focus, textarea:focus {
     </div>
     <div class="prep-cal-grid" id="prepCalGrid"></div>
   </div>
-  <div class="prep-deco" style="top:4px;right:8px;font-size:28px;transform:rotate(10deg);">🎀</div>
-  <div class="prep-deco" style="top:72px;left:4px;font-size:16px;transform:rotate(-8deg);opacity:0.7;">✨</div>
-  <div class="prep-deco" style="bottom:130px;left:8px;font-size:22px;transform:rotate(-6deg);opacity:0.75;">🌷</div>
-  <div class="prep-deco" style="bottom:100px;right:10px;font-size:20px;transform:rotate(8deg);opacity:0.72;">💜</div>
+  <img class="prep-deco" src="deco1-bow-pink.png"     style="top:2px;right:6px;width:62px;transform:rotate(8deg);">
+  <img class="prep-deco" src="deco4-bow-lavender.png" style="top:56px;left:2px;width:54px;transform:rotate(-10deg);opacity:0.88;">
+  <img class="prep-deco" src="deco2-tulip.png"        style="bottom:128px;left:4px;width:68px;transform:rotate(-5deg);">
+  <img class="prep-deco" src="deco3-heart-gingham.png" style="bottom:96px;right:8px;width:54px;transform:rotate(7deg);">
 </div>
 
 <!-- ── Bottom Nav ── -->
