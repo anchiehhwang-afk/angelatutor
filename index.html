@@ -596,19 +596,21 @@ input:focus, select:focus, textarea:focus {
   <div class="section-label">考試倒數</div>
   <div class="card card-taped" style="padding:14px 14px 12px;">
     <div id="examCountdowns" style="display:flex;gap:6px;margin-bottom:14px;"></div>
-    <div style="font-family:var(--hw);font-size:12px;color:var(--text-muted);margin-bottom:8px;">設定考試日期</div>
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:13px;color:var(--text-muted);width:64px;flex-shrink:0;">第一次英聽</span>
-        <input type="date" id="examInput_e1" style="flex:1;margin:0;" onchange="saveExamDate('e1')">
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:13px;color:var(--text-muted);width:64px;flex-shrink:0;">第二次英聽</span>
-        <input type="date" id="examInput_e2" style="flex:1;margin:0;" onchange="saveExamDate('e2')">
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:13px;color:var(--text-muted);width:64px;flex-shrink:0;">學測英文</span>
-        <input type="date" id="examInput_e3" style="flex:1;margin:0;" onchange="saveExamDate('e3')">
+    <button onclick="toggleExamSettings()" style="background:none;border:none;font-family:var(--hw);font-size:12px;color:var(--text-muted);cursor:pointer;padding:0;margin-bottom:2px;" id="examSettingsToggle">⚙ 設定日期 ▾</button>
+    <div id="examSettings" style="display:none;margin-top:8px;">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:13px;color:var(--text-muted);width:64px;flex-shrink:0;">第一次英聽</span>
+          <input type="date" id="examInput_e1" style="flex:1;margin:0;" onchange="saveExamDate('e1')">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:13px;color:var(--text-muted);width:64px;flex-shrink:0;">第二次英聽</span>
+          <input type="date" id="examInput_e2" style="flex:1;margin:0;" onchange="saveExamDate('e2')">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:13px;color:var(--text-muted);width:64px;flex-shrink:0;">學測英文</span>
+          <input type="date" id="examInput_e3" style="flex:1;margin:0;" onchange="saveExamDate('e3')">
+        </div>
       </div>
     </div>
   </div>
@@ -1188,6 +1190,14 @@ function loadExamDates() {
   examDates.e3 = localStorage.getItem('tutor_exam_e3') || '2027-01-22';
 }
 
+function toggleExamSettings() {
+  const el = document.getElementById('examSettings');
+  const btn = document.getElementById('examSettingsToggle');
+  const open = el.style.display === 'none';
+  el.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? '⚙ 設定日期 ▲' : '⚙ 設定日期 ▾';
+}
+
 function saveExamDate(key) {
   const val = document.getElementById('examInput_' + key).value;
   if (!val) return;
@@ -1258,19 +1268,28 @@ function renderDashboard() {
       </div>
     </div>`;
 
-  // Unpaid reminders
-  const unpaid = [];
-  Object.entries(data.monthStatus).forEach(([key, val]) => {
-    if (val.notified && !val.paid) {
-      const year = key.slice(0, 4);
-      const month = parseInt(key.slice(5, 7));
-      const studentId = key.slice(8);
-      const student = data.students.find(s => s.id === studentId);
-      const recs = data.records.filter(r => r.studentId === studentId && r.date.startsWith(key.slice(0, 7)));
-      const total = Math.round(recs.reduce((s, r) => s + r.hours * r.rate, 0));
-      unpaid.push({ name: student ? student.name : '（已刪除）', year, month, total });
-    }
+  // Unpaid reminders: all student-months with records but not marked paid
+  const seen = new Set();
+  const pairs = [];
+  data.records.forEach(r => {
+    const ym = r.date.slice(0, 7);
+    const uid = `${r.studentId}|${ym}`;
+    if (!seen.has(uid)) { seen.add(uid); pairs.push({ studentId: r.studentId, ym }); }
   });
+  const unpaid = pairs
+    .filter(p => {
+      const [y, m] = p.ym.split('-');
+      const ms = data.monthStatus[`${y}-${m}-${p.studentId}`];
+      return !ms || !ms.paid;
+    })
+    .map(p => {
+      const [y, m] = p.ym.split('-');
+      const student = data.students.find(s => s.id === p.studentId);
+      const recs = data.records.filter(r => r.studentId === p.studentId && r.date.startsWith(p.ym));
+      const total = Math.round(recs.reduce((s, r) => s + r.hours * r.rate, 0));
+      return { name: student ? student.name : '（已刪除）', year: parseInt(y), month: parseInt(m), total };
+    })
+    .sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month);
   document.getElementById('unpaidCard').innerHTML = unpaid.length
     ? unpaid.map(u => `<div class="record-item">
         <div class="record-info">
