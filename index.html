@@ -564,34 +564,44 @@ input:focus, select:focus, textarea:focus {
   padding-bottom: 24px;
 }
 #page-prep .month-selector {
-  background: rgba(255,235,245,0.22);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(255,255,255,0.45);
+  background: rgba(255,220,238,0.12);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1.5px solid rgba(255,255,255,0.55);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 4px 16px rgba(180,130,170,0.12);
   position: relative; z-index: 2;
 }
+/* Glass pill buttons — ref 毛玻璃参考2 */
+#page-prep .month-nav {
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.6);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.7), inset 0 -1px 0 rgba(200,160,200,0.2), 0 2px 8px rgba(160,120,170,0.15);
+  color: rgba(120,90,140,0.9);
+}
+#page-prep .month-nav:hover {
+  background: rgba(255,255,255,0.32);
+  color: var(--lavender);
+}
 .prep-cal-card {
-  background: rgba(255,235,245,0.25) !important;
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(255,255,255,0.45) !important;
-  box-shadow: 0 4px 24px rgba(180,140,180,0.18) !important;
+  background: rgba(255,220,238,0.13) !important;
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1.5px solid rgba(255,255,255,0.55) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 8px 32px rgba(180,130,170,0.18) !important;
   position: relative; z-index: 2;
 }
 #page-prep .prep-cal-day {
-  background: rgba(255,255,255,0.55);
-  border-color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.42);
+  border-color: rgba(255,255,255,0.55);
 }
 #page-prep .prep-cal-day:hover,
 #page-prep .prep-cal-day.today {
-  background: rgba(255,255,255,0.78);
-  border-color: rgba(155,143,173,0.6);
+  background: rgba(255,255,255,0.72);
+  border-color: rgba(155,143,173,0.55);
 }
 #page-prep .prep-cal-day.empty { background: transparent; border-color: transparent; }
-.prep-deco {
-  position: absolute; pointer-events: none; user-select: none;
-  z-index: 1; line-height: 1;
-}
 </style>
 </head>
 <body>
@@ -730,10 +740,6 @@ input:focus, select:focus, textarea:focus {
     </div>
     <div class="prep-cal-grid" id="prepCalGrid"></div>
   </div>
-  <img class="prep-deco" src="deco1-bow-pink.png"     style="top:2px;right:6px;width:62px;transform:rotate(8deg);">
-  <img class="prep-deco" src="deco4-bow-lavender.png" style="top:56px;left:2px;width:54px;transform:rotate(-10deg);opacity:0.88;">
-  <img class="prep-deco" src="deco2-tulip.png"        style="bottom:128px;left:4px;width:68px;transform:rotate(-5deg);">
-  <img class="prep-deco" src="deco3-heart-gingham.png" style="bottom:96px;right:8px;width:54px;transform:rotate(7deg);">
 </div>
 
 <!-- ── Bottom Nav ── -->
