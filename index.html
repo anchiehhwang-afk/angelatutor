@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root {
   --bg: #f7f3ec;
@@ -589,32 +590,49 @@ input:focus, select:focus, textarea:focus {
   <button class="btn-logout" onclick="logout()">登出</button>
 </div>
 
-<!-- ── Page: Log ── -->
-<div id="page-log" class="page active">
-  <div class="card journal-card card-taped">
-    <div class="card-title">✏️ 登記上課</div>
-    <label>學生</label>
-    <select id="logStudent"><option value="">請選擇學生...</option></select>
-    <label>上課日期</label>
-    <input type="date" id="logDate">
-    <label>上課時長</label>
-    <div class="chip-group" id="hoursChips">
-      <div class="chip" data-val="1"      onclick="selectChip(this,'hours')">1 小時</div>
-      <div class="chip" data-val="1.5"    onclick="selectChip(this,'hours')">1.5 小時</div>
-      <div class="chip" data-val="2"      onclick="selectChip(this,'hours')">2 小時</div>
-      <div class="chip" data-val="custom" onclick="selectChip(this,'hours')">自訂</div>
-    </div>
-    <input type="number" id="logHoursCustom" placeholder="輸入小時數（例：1.5）" step="0.5" min="0.5" style="display:none;margin-top:6px;">
-    <div style="margin-top:18px;">
-      <button class="btn btn-primary" onclick="addRecord()">✦ 登記這堂課</button>
+<!-- ── Page: Dashboard ── -->
+<div id="page-dashboard" class="page active">
+
+  <div class="section-label">考試倒數</div>
+  <div class="card card-taped" style="padding:14px 14px 12px;">
+    <div id="examCountdowns" style="display:flex;gap:6px;margin-bottom:14px;"></div>
+    <div style="font-family:var(--hw);font-size:12px;color:var(--text-muted);margin-bottom:8px;">設定考試日期</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:13px;color:var(--text-muted);width:64px;flex-shrink:0;">第一次英聽</span>
+        <input type="date" id="examInput_e1" style="flex:1;margin:0;" onchange="saveExamDate('e1')">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:13px;color:var(--text-muted);width:64px;flex-shrink:0;">第二次英聽</span>
+        <input type="date" id="examInput_e2" style="flex:1;margin:0;" onchange="saveExamDate('e2')">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:13px;color:var(--text-muted);width:64px;flex-shrink:0;">學測英文</span>
+        <input type="date" id="examInput_e3" style="flex:1;margin:0;" onchange="saveExamDate('e3')">
+      </div>
     </div>
   </div>
-  <div class="section-label">最近記錄</div>
+
+  <div class="section-label">本月快照</div>
+  <div class="card" id="snapshotCard"></div>
+
+  <div class="section-label">收入趨勢</div>
   <div class="card">
-    <div id="recentRecords">
-      <div class="empty"><div class="empty-icon">🌸</div>還沒有記錄，快去登記第一堂課！</div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+      <input type="month" id="chartFrom" style="flex:1;margin:0;" onchange="renderIncomeChart()">
+      <span style="color:var(--text-muted);flex-shrink:0;">～</span>
+      <input type="month" id="chartTo" style="flex:1;margin:0;" onchange="renderIncomeChart()">
     </div>
+    <div id="chartTitle" style="font-family:var(--hw);font-size:14px;color:var(--text);margin-bottom:10px;line-height:1.4;"></div>
+    <canvas id="incomeChart" height="180"></canvas>
   </div>
+
+  <div class="section-label">未收款提醒</div>
+  <div class="card" id="unpaidCard"></div>
+
+  <div class="section-label">近期備課（未來 7 天）</div>
+  <div class="card" id="upcomingCard" style="margin-bottom:8px;"></div>
+
 </div>
 
 <!-- ── Page: Month ── -->
@@ -678,12 +696,12 @@ input:focus, select:focus, textarea:focus {
 
 <!-- ── Bottom Nav ── -->
 <nav class="bottom-nav">
-  <button class="nav-btn active" id="nav-log" onclick="showPage('log')">
+  <button class="nav-btn active" id="nav-dashboard" onclick="showPage('dashboard')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
     </svg>
-    登記上課
+    控制面板
     <div class="nav-pip"></div>
   </button>
   <button class="nav-btn" id="nav-month" onclick="showPage('month')">
@@ -714,6 +732,9 @@ input:focus, select:focus, textarea:focus {
     <div class="nav-pip"></div>
   </button>
 </nav>
+
+<!-- ── Quick Add FAB ── -->
+<button id="quickAddBtn" onclick="openQuickAddSheet()" style="position:fixed;right:20px;bottom:calc(68px + env(safe-area-inset-bottom) + 12px);width:52px;height:52px;border-radius:50%;background:var(--lavender);border:none;box-shadow:0 4px 16px rgba(155,143,173,0.45);font-size:26px;cursor:pointer;display:none;z-index:100;color:#fff;line-height:1;align-items:center;justify-content:center;">+</button>
 
 <!-- ── Bottom Sheet ── -->
 <div class="sheet-overlay" id="sheetOverlay" onclick="closeStudentSheet()"></div>
@@ -746,6 +767,9 @@ let prepMonth      = new Date().getMonth() + 1;
 let sheetStudentId = null;
 let _prepDate      = null;
 let _prepNewHours  = null;
+let _quickHours    = null;
+let _incomeChart   = null;
+let examDates      = { e1: '2026-10-17', e2: '2026-12-12', e3: '2027-01-22' };
 let loginMode      = 'login';
 
 // ── Auth ──
@@ -828,16 +852,13 @@ async function logout() {
 
 // ── Init ──
 async function initApp() {
+  loadExamDates();
   await loadFromSupabase();
-  const _t = new Date();
-  document.getElementById('logDate').value =
-    `${_t.getFullYear()}-${String(_t.getMonth()+1).padStart(2,'0')}-${String(_t.getDate()).padStart(2,'0')}`;
   document.getElementById('headerDate').textContent = formatDate(new Date());
-  renderStudentSelect();
-  renderRecentRecords();
   renderStudentList();
   updateMonthLabel();
   updatePrepMonthLabel();
+  renderDashboard();
 }
 
 // ── Load from Supabase ──
@@ -872,9 +893,11 @@ function showPage(name) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   document.getElementById('nav-'  + name).classList.add('active');
-  if (name === 'month')    renderMonthSummary();
-  if (name === 'students') renderStudentList();
-  if (name === 'prep')     renderPrepCalendar();
+  document.getElementById('quickAddBtn').style.display = name === 'dashboard' ? 'flex' : 'none';
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'month')     renderMonthSummary();
+  if (name === 'students')  renderStudentList();
+  if (name === 'prep')      renderPrepCalendar();
 }
 
 // ── Chips ──
@@ -913,7 +936,6 @@ async function addStudent() {
   document.querySelectorAll('#rateChips .chip').forEach(c => c.classList.remove('selected'));
   selectedRate = null;
   renderStudentList();
-  renderStudentSelect();
   showToast('已新增學生：' + name + ' ✦');
 }
 
@@ -928,8 +950,6 @@ async function deleteStudent(id) {
   data.students = data.students.filter(s => s.id !== id);
   data.records  = data.records.filter(r => r.studentId !== id);
   renderStudentList();
-  renderStudentSelect();
-  renderRecentRecords();
   showToast('已刪除學生');
 }
 
@@ -950,41 +970,18 @@ function renderStudentList() {
   `).join('');
 }
 
-function renderStudentSelect() {
-  const sel = document.getElementById('logStudent');
-  const val = sel.value;
-  sel.innerHTML = '<option value="">請選擇學生...</option>' +
-    data.students.map(s => `<option value="${s.id}">${s.name}（NT$${s.rate}/hr）</option>`).join('');
-  sel.value = val;
-}
-
 // ── Records ──
-async function addRecord() {
-  const studentId = document.getElementById('logStudent').value;
-  if (!studentId) return showToast('請選擇學生');
-  const date = document.getElementById('logDate').value;
-  if (!date) return showToast('請選擇日期');
-  const customHours = document.getElementById('logHoursCustom').value;
-  const hours = selectedHours || (customHours ? parseFloat(customHours) : null);
-  if (!hours || hours <= 0) return showToast('請選擇或輸入上課時長');
-
-  const s    = data.students.find(s => s.id === studentId);
-  const rate = s.rate;
-
+async function _insertRecord(studentId, date, hours) {
+  const s = data.students.find(s => s.id === studentId);
   const { data: row, error } = await sb
     .from('records')
-    .insert({ student_id: studentId, date, hours, rate, user_id: currentUser.id })
+    .insert({ student_id: studentId, date, hours, rate: s.rate, user_id: currentUser.id })
     .select().single();
-  if (error) return showToast('儲存失敗，請稍後再試');
-
-  data.records.unshift({ id: row.id, studentId, date, hours, rate });
+  if (error) { showToast('儲存失敗，請稍後再試'); return null; }
+  const rec = { id: row.id, studentId, date, hours, rate: s.rate };
+  data.records.unshift(rec);
   data.records.sort((a, b) => b.date.localeCompare(a.date));
-  selectedHours = null;
-  document.querySelectorAll('#hoursChips .chip').forEach(c => c.classList.remove('selected'));
-  document.getElementById('logHoursCustom').value = '';
-  document.getElementById('logHoursCustom').style.display = 'none';
-  renderRecentRecords();
-  showToast(`已登記 ${s.name} ${hours} 小時 ✦`);
+  return rec;
 }
 
 async function deleteRecord(id) {
@@ -994,37 +991,7 @@ async function deleteRecord(id) {
   if (error) return showToast('刪除失敗，請稍後再試');
 
   data.records = data.records.filter(r => r.id !== id);
-  renderRecentRecords();
   showToast('已刪除記錄');
-}
-
-function renderRecentRecords() {
-  const el = document.getElementById('recentRecords');
-  if (!data.records.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">🌸</div>還沒有記錄，快去登記第一堂課！</div>';
-    return;
-  }
-  el.innerHTML = data.records.slice(0, 20).map(r => {
-    const s = data.students.find(s => s.id === r.studentId);
-    const name = s ? s.name : '（已刪除）';
-    const d = new Date(r.date + 'T00:00:00');
-    const dateStr = `${d.getMonth()+1}/${d.getDate()}（週${['日','一','二','三','四','五','六'][d.getDay()]}）`;
-    return `
-      <div class="record-item">
-        <div class="record-info">
-          <div class="record-student">${name}</div>
-          <div class="record-date">${dateStr}</div>
-        </div>
-        <span class="record-hours">${r.hours} 小時</span>
-        <button class="delete-btn" onclick="deleteRecord('${r.id}')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-            <path d="M10 11v6"/><path d="M14 11v6"/>
-          </svg>
-        </button>
-      </div>`;
-  }).join('');
 }
 
 // ── Month summary ──
@@ -1214,6 +1181,265 @@ function formatDate(d) {
   return `${d.getFullYear()} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日  週${days[d.getDay()]}`;
 }
 
+// ── Exam Dates ──
+function loadExamDates() {
+  examDates.e1 = localStorage.getItem('tutor_exam_e1') || '2026-10-17';
+  examDates.e2 = localStorage.getItem('tutor_exam_e2') || '2026-12-12';
+  examDates.e3 = localStorage.getItem('tutor_exam_e3') || '2027-01-22';
+}
+
+function saveExamDate(key) {
+  const val = document.getElementById('examInput_' + key).value;
+  if (!val) return;
+  examDates[key] = val;
+  localStorage.setItem('tutor_exam_' + key, val);
+  renderDashboard();
+}
+
+function examCountdown(fromStr, toStr) {
+  const from = new Date(fromStr + 'T00:00:00');
+  const to   = new Date(toStr   + 'T00:00:00');
+  const days = Math.round((to - from) / 86400000);
+  if (days < 0) return { days, weeks: null };
+  const fromSun = new Date(from); fromSun.setDate(from.getDate() - from.getDay());
+  const toSun   = new Date(to);   toSun.setDate(to.getDate() - to.getDay());
+  const weeks = Math.round((toSun - fromSun) / (7 * 86400000));
+  return { days, weeks };
+}
+
+// ── Dashboard ──
+function renderDashboard() {
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+  // Exam date inputs
+  document.getElementById('examInput_e1').value = examDates.e1;
+  document.getElementById('examInput_e2').value = examDates.e2;
+  document.getElementById('examInput_e3').value = examDates.e3;
+
+  // Countdown cards
+  const exams = [
+    { key: 'e1', label: '英聽一' },
+    { key: 'e2', label: '英聽二' },
+    { key: 'e3', label: '學測英' },
+  ];
+  document.getElementById('examCountdowns').innerHTML = exams.map(ex => {
+    const dateStr = examDates[ex.key];
+    const [y, mo, d] = dateStr.split('-');
+    const dateLabel = `${parseInt(mo)}/${parseInt(d)}`;
+    const cd = examCountdown(todayStr, dateStr);
+    const past = cd.days < 0;
+    return `<div style="flex:1;background:var(--bg);border-radius:12px;padding:10px 6px;text-align:center;">
+      <div style="font-family:var(--hw);font-size:11px;color:var(--text-muted);margin-bottom:2px;">${ex.label}</div>
+      <div style="font-family:var(--hw);font-size:12px;color:var(--text);margin-bottom:4px;">${dateLabel}</div>
+      <div style="font-family:var(--hw);font-size:22px;font-weight:700;color:${past ? 'var(--text-muted)' : 'var(--lavender)'};">${past ? '已過' : cd.weeks + '週'}</div>
+      ${past ? '' : `<div style="font-size:11px;color:var(--text-muted);">${cd.days} 天</div>`}
+    </div>`;
+  }).join('');
+
+  // Monthly snapshot
+  const ym = todayStr.slice(0, 7);
+  const monthRecs = data.records.filter(r => r.date.startsWith(ym));
+  const mIncome = Math.round(monthRecs.reduce((s, r) => s + r.hours * r.rate, 0));
+  const mHours  = monthRecs.reduce((s, r) => s + r.hours, 0);
+  document.getElementById('snapshotCard').innerHTML = `
+    <div style="display:flex;text-align:center;">
+      <div style="flex:1;padding:10px 4px;border-right:1px solid var(--border);">
+        <div style="font-family:var(--hw);font-size:20px;font-weight:700;color:var(--lavender);">NT$${mIncome.toLocaleString()}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">本月收入</div>
+      </div>
+      <div style="flex:1;padding:10px 4px;border-right:1px solid var(--border);">
+        <div style="font-family:var(--hw);font-size:20px;font-weight:700;color:var(--sage);">${mHours}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">本月時數</div>
+      </div>
+      <div style="flex:1;padding:10px 4px;">
+        <div style="font-family:var(--hw);font-size:20px;font-weight:700;color:var(--rose);">${monthRecs.length}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">上課次數</div>
+      </div>
+    </div>`;
+
+  // Unpaid reminders
+  const unpaid = [];
+  Object.entries(data.monthStatus).forEach(([key, val]) => {
+    if (val.notified && !val.paid) {
+      const year = key.slice(0, 4);
+      const month = parseInt(key.slice(5, 7));
+      const studentId = key.slice(8);
+      const student = data.students.find(s => s.id === studentId);
+      const recs = data.records.filter(r => r.studentId === studentId && r.date.startsWith(key.slice(0, 7)));
+      const total = Math.round(recs.reduce((s, r) => s + r.hours * r.rate, 0));
+      unpaid.push({ name: student ? student.name : '（已刪除）', year, month, total });
+    }
+  });
+  document.getElementById('unpaidCard').innerHTML = unpaid.length
+    ? unpaid.map(u => `<div class="record-item">
+        <div class="record-info">
+          <div class="record-student">${u.name}</div>
+          <div class="record-date">${u.year} 年 ${u.month} 月</div>
+        </div>
+        <span class="record-hours" style="color:var(--rose);">NT$${u.total.toLocaleString()}</span>
+      </div>`).join('')
+    : '<div class="empty"><div class="empty-icon">✓</div>目前沒有待收款項</div>';
+
+  // Upcoming prep (next 7 days)
+  const in7 = new Date(now); in7.setDate(now.getDate() + 7);
+  const in7S = `${in7.getFullYear()}-${String(in7.getMonth()+1).padStart(2,'0')}-${String(in7.getDate()).padStart(2,'0')}`;
+  const upcoming = data.prepSessions
+    .filter(p => p.date >= todayStr && p.date <= in7S)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const dayNames = ['日','一','二','三','四','五','六'];
+  document.getElementById('upcomingCard').innerHTML = upcoming.length
+    ? upcoming.map(p => {
+        const st = data.students.find(s => s.id === p.studentId);
+        const d  = new Date(p.date + 'T00:00:00');
+        const dl = `${d.getMonth()+1}/${d.getDate()}（週${dayNames[d.getDay()]}）`;
+        const status = `${p.prepDone ? '✓' : '○'} 備課 ${p.homeworkDone ? '✓' : '○'} 作業`;
+        return `<div class="record-item">
+          <div class="record-info">
+            <div class="record-student">${st ? st.name : '（已刪除）'}</div>
+            <div class="record-date">${dl} · ${p.hours}hr · ${status}</div>
+          </div>
+          ${p.recordId ? '<span style="font-size:11px;color:var(--sage);">已登記</span>' : ''}
+        </div>`;
+      }).join('')
+    : '<div class="empty"><div class="empty-icon">📅</div>未來 7 天沒有排課</div>';
+
+  // Income chart (set defaults first time)
+  const cf = document.getElementById('chartFrom');
+  const ct = document.getElementById('chartTo');
+  if (!cf.value) {
+    ct.value = todayStr.slice(0, 7);
+    const fd = new Date(now); fd.setMonth(fd.getMonth() - 5);
+    cf.value = `${fd.getFullYear()}-${String(fd.getMonth()+1).padStart(2,'0')}`;
+  }
+  renderIncomeChart();
+
+  // Show FAB
+  document.getElementById('quickAddBtn').style.display = 'flex';
+}
+
+function getMonthlyIncome(fromYM, toYM) {
+  const map = {};
+  data.records.forEach(r => {
+    const ym = r.date.slice(0, 7);
+    if (ym >= fromYM && ym <= toYM) map[ym] = (map[ym] || 0) + r.hours * r.rate;
+  });
+  const result = [];
+  let [y, m] = fromYM.split('-').map(Number);
+  const [ey, em] = toYM.split('-').map(Number);
+  while (y < ey || (y === ey && m <= em)) {
+    const key = `${y}-${String(m).padStart(2,'0')}`;
+    result.push({ key, income: Math.round(map[key] || 0) });
+    if (++m > 12) { m = 1; y++; }
+  }
+  return result;
+}
+
+function renderIncomeChart() {
+  const cf = document.getElementById('chartFrom');
+  const ct = document.getElementById('chartTo');
+  if (!cf || !ct || !cf.value || !ct.value || cf.value > ct.value) return;
+  const months = getMonthlyIncome(cf.value, ct.value);
+  const total  = months.reduce((s, m) => s + m.income, 0);
+  const fm = parseInt(cf.value.split('-')[1]);
+  const tm = parseInt(ct.value.split('-')[1]);
+  const fy = cf.value.split('-')[0];
+  const ty = ct.value.split('-')[0];
+  const rangeLabel = cf.value === ct.value
+    ? `${fm} 月`
+    : (fy === ty ? `${fm} 月～${tm} 月` : `${fy}/${fm} 月～${ty}/${tm} 月`);
+  document.getElementById('chartTitle').textContent = `${rangeLabel}的總收入是 NT$ ${total.toLocaleString()} 元`;
+
+  const ctx = document.getElementById('incomeChart').getContext('2d');
+  if (_incomeChart) _incomeChart.destroy();
+  _incomeChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: months.map(m => `${parseInt(m.key.split('-')[1])}月`),
+      datasets: [{
+        data: months.map(m => m.income),
+        borderColor: 'rgb(155,143,173)',
+        backgroundColor: 'rgba(155,143,173,0.12)',
+        borderWidth: 2.5,
+        pointBackgroundColor: 'rgb(155,143,173)',
+        pointRadius: 5,
+        tension: 0.35,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => `NT$ ${c.raw.toLocaleString()}` } }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: v => `$${(v/1000).toFixed(0)}k`, font: { family: 'Zen Maru Gothic', size: 11 } },
+          grid: { color: 'rgba(155,143,173,0.15)' }
+        },
+        x: {
+          ticks: { font: { family: 'Zen Maru Gothic', size: 11 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+// ── Quick Add Sheet ──
+function openQuickAddSheet() {
+  _quickHours = null;
+  const today = new Date();
+  const todayVal = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const opts = data.students.map(s => `<option value="${s.id}">${s.name}（NT$${s.rate}/hr）</option>`).join('');
+  const chips = [1, 1.5, 2].map(h =>
+    `<div class="chip" onclick="selectQuickHoursChip(this,${h})">${h} 小時</div>`
+  ).join('') + `<div class="chip" onclick="selectQuickHoursChip(this,'custom')">自訂</div>`;
+
+  document.getElementById('sheetContent').innerHTML = `
+    <div class="sheet-header">
+      <div class="sheet-name">快速新增上課記錄</div>
+    </div>
+    <label>學生</label>
+    <select id="qaStudent" style="margin-bottom:10px;"><option value="">請選擇學生...</option>${opts}</select>
+    <label>上課日期</label>
+    <input type="date" id="qaDate" value="${todayVal}" style="margin-bottom:10px;">
+    <label>上課時長</label>
+    <div class="chip-group" id="qaHoursChips" style="margin-bottom:6px;">${chips}</div>
+    <input type="number" id="qaHoursCustom" placeholder="輸入小時數" step="0.5" min="0.5" style="display:none;margin-bottom:10px;">
+    <button class="btn btn-primary" onclick="addQuickRecord()" style="margin-top:4px;">✦ 登記這堂課</button>`;
+
+  document.getElementById('sheetOverlay').classList.add('show');
+  document.getElementById('bottomSheet').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function selectQuickHoursChip(el, val) {
+  document.querySelectorAll('#qaHoursChips .chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  _quickHours = val === 'custom' ? null : parseFloat(val);
+  document.getElementById('qaHoursCustom').style.display = val === 'custom' ? 'block' : 'none';
+}
+
+async function addQuickRecord() {
+  const studentId = document.getElementById('qaStudent').value;
+  if (!studentId) return showToast('請選擇學生');
+  const date = document.getElementById('qaDate').value;
+  if (!date) return showToast('請選擇日期');
+  const customH = document.getElementById('qaHoursCustom').value;
+  const hours = _quickHours || (customH ? parseFloat(customH) : null);
+  if (!hours || hours <= 0) return showToast('請選擇上課時長');
+
+  const rec = await _insertRecord(studentId, date, hours);
+  if (!rec) return;
+  _quickHours = null;
+  closeStudentSheet();
+  const s = data.students.find(s => s.id === studentId);
+  showToast(`已登記 ${s.name} ${hours} 小時 ✦`);
+}
+
 // ── Prep: Month navigation ──
 function changePrepMonth(dir) {
   closeStudentSheet();
@@ -1311,11 +1537,21 @@ function _renderPrepSheet() {
     `<div class="chip" data-val="${h}" onclick="selectPrepHoursChip(this,${h})">${h} 小時</div>`
   ).join('') + `<div class="chip" data-val="custom" onclick="selectPrepHoursChip(this,'custom')">自訂</div>`;
 
+  const examLabels = [
+    { label: '英聽一', key: 'e1' }, { label: '英聽二', key: 'e2' }, { label: '學測英', key: 'e3' }
+  ];
+  const countdownHtml = examLabels.map(ex => {
+    const cd = examCountdown(_prepDate, examDates[ex.key]);
+    if (cd.days < 0) return `<span style="font-size:12px;color:var(--text-muted);">${ex.label} 已過</span>`;
+    return `<span style="font-size:12px;color:var(--text-muted);">${ex.label} <b style="color:var(--lavender);">${cd.weeks}週</b>（${cd.days}天）</span>`;
+  }).join('<span style="color:var(--border);margin:0 4px;">·</span>');
+
   document.getElementById('sheetContent').innerHTML = `
     <div class="sheet-header">
       <div class="sheet-month-tag">${prepYear} 年 ${prepMonth} 月</div>
       <div class="sheet-name">${dateLabel}</div>
     </div>
+    <div style="margin:-4px 0 14px;line-height:1.8;">${countdownHtml}</div>
     ${rows}
     <div style="margin-top:14px;">
       <div style="font-family:var(--hw);font-size:15px;color:var(--text-muted);margin-bottom:8px;">✦ 新增備課計畫</div>
@@ -1367,17 +1603,10 @@ async function togglePrepStatus(sessionId, type) {
 }
 
 async function autoLogRecord(session) {
-  const student = data.students.find(st => st.id === session.studentId);
-  if (!student) return;
-  const { data: row, error } = await sb
-    .from('records')
-    .insert({ student_id: session.studentId, date: session.date, hours: session.hours, rate: student.rate, user_id: currentUser.id })
-    .select().single();
-  if (error) return showToast('自動登記失敗，請稍後再試');
-  session.recordId = row.id;
-  await sb.from('prep_sessions').update({ record_id: row.id }).eq('id', session.id);
-  data.records.unshift({ id: row.id, studentId: session.studentId, date: session.date, hours: session.hours, rate: student.rate });
-  data.records.sort((a, b) => b.date.localeCompare(a.date));
+  const rec = await _insertRecord(session.studentId, session.date, session.hours);
+  if (!rec) return;
+  session.recordId = rec.id;
+  await sb.from('prep_sessions').update({ record_id: rec.id }).eq('id', session.id);
   showToast('已自動登記上課記錄 ✦');
 }
 
