@@ -556,6 +556,29 @@ input:focus, select:focus, textarea:focus {
 .prep-cal-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--lavender); opacity: 0.65; }
 .prep-cal-dot.partial { background: var(--rose); opacity: 0.85; }
 .prep-cal-dot.done    { background: var(--sage); opacity: 1; }
+/* ── Prep Calendar: background ── */
+#page-prep {
+  position: relative;
+  background: url('日历背景图用这个.jpg') bottom center / cover no-repeat;
+  min-height: calc(100vh - 68px);
+  padding-bottom: 24px;
+}
+#page-prep .month-selector {
+  background: rgba(255,252,248,0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  position: relative; z-index: 2;
+}
+.prep-cal-card {
+  background: rgba(255,252,248,0.86) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  position: relative; z-index: 2;
+}
+.prep-deco {
+  position: absolute; pointer-events: none; user-select: none;
+  z-index: 1; line-height: 1;
+}
 </style>
 </head>
 <body>
@@ -687,13 +710,17 @@ input:focus, select:focus, textarea:focus {
     <span class="month-label" id="prepMonthLabel"></span>
     <button class="month-nav" onclick="changePrepMonth(1)">›</button>
   </div>
-  <div class="card card-taped" style="padding:14px 12px;">
+  <div class="card card-taped prep-cal-card" style="padding:14px 12px;">
     <div class="prep-cal-header">
       <div>日</div><div>一</div><div>二</div><div>三</div>
       <div>四</div><div>五</div><div>六</div>
     </div>
     <div class="prep-cal-grid" id="prepCalGrid"></div>
   </div>
+  <div class="prep-deco" style="top:4px;right:8px;font-size:28px;transform:rotate(10deg);">🎀</div>
+  <div class="prep-deco" style="top:72px;left:4px;font-size:16px;transform:rotate(-8deg);opacity:0.7;">✨</div>
+  <div class="prep-deco" style="bottom:130px;left:8px;font-size:22px;transform:rotate(-6deg);opacity:0.75;">🌷</div>
+  <div class="prep-deco" style="bottom:100px;right:10px;font-size:20px;transform:rotate(8deg);opacity:0.72;">💜</div>
 </div>
 
 <!-- ── Bottom Nav ── -->
